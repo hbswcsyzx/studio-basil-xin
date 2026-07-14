@@ -8,7 +8,7 @@ STYLES = (Path(__file__).parents[2] / "frontend" / "src" / "styles.css").read_te
 def test_result_image_is_bounded_by_the_visible_stage():
     assert re.search(r"\.selected-image-wrap\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*24px;", STYLES, re.S)
     assert re.search(
-        r"\.viewport-fit-image\s*\{[^}]*width:\s*auto;[^}]*height:\s*auto;"
+        r"\.viewport-fit-image\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;"
         r"[^}]*max-width:\s*100%;[^}]*max-height:\s*100%;[^}]*object-fit:\s*contain;",
         STYLES,
         re.S,
