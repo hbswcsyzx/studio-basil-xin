@@ -1,9 +1,17 @@
+export type StylePreset = {
+  id: string
+  name: string
+  prompt: string
+  builtin: boolean
+}
+
 export type UserPreferences = {
   default_image_provider_id?: string
   default_image_model?: string
   default_text_provider_id?: string
   default_text_model?: string
   history_summary_enabled?: boolean
+  style_presets?: StylePreset[]
 }
 
 export type User = {
@@ -47,7 +55,7 @@ export type Run = {
   prompt: string
   model: string
   provider_id: string
-  params: Record<string, string | number>
+  params: Record<string, string | number | string[]>
   status: 'running' | 'completed' | 'failed'
   error?: string
   created_at: string

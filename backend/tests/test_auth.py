@@ -86,3 +86,31 @@ def test_profile_email_and_model_preferences_are_user_scoped(client: TestClient,
     bob = client.get("/api/auth/me").json()
     assert bob["email"] is None
     assert bob["preferences"] == {}
+
+
+def test_style_presets_are_editable_and_user_scoped(client: TestClient, register):
+    register("alice")
+    presets = [
+        {
+            "id": "cinematic",
+            "name": "电影感",
+            "prompt": "冷峻电影光线，保留真实材质。",
+            "builtin": True,
+        },
+        {
+            "id": "custom-card",
+            "name": "卡牌头像",
+            "prompt": "角色半身构图，主体清晰。",
+            "builtin": False,
+        },
+    ]
+
+    updated = client.patch("/api/auth/preferences", json={"style_presets": presets})
+
+    assert updated.status_code == 200
+    assert updated.json()["preferences"]["style_presets"] == presets
+    assert client.get("/api/auth/me").json()["preferences"]["style_presets"] == presets
+
+    client.post("/api/auth/logout")
+    register("bob")
+    assert "style_presets" not in client.get("/api/auth/me").json()["preferences"]

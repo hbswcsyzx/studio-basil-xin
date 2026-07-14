@@ -50,7 +50,7 @@ export default function SessionDrawer(props: Props) {
         </div>)}</div>
       </> : <div className="favorite-gallery">
         {props.favorites.length ? props.favorites.map(asset => <button key={asset.id} onClick={() => props.onSelectFavorite(asset)}>
-          <img src={asset.content_url} alt="收藏图片" /><span>{asset.prompt || '未记录提示词'}</span>
+          <img className="contained-thumbnail" src={asset.content_url} alt="收藏图片" /><span>{asset.prompt || '未记录提示词'}</span>
         </button>) : <div className="empty-drawer"><Images /><p>还没有收藏图片</p></div>}
       </div>}
     </aside>

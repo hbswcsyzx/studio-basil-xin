@@ -31,12 +31,20 @@ class ProfileUpdate(BaseModel):
     new_password: str | None = Field(default=None, min_length=8, max_length=256)
 
 
+class StylePresetInput(BaseModel):
+    id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    name: str = Field(min_length=1, max_length=40)
+    prompt: str = Field(min_length=1, max_length=4000)
+    builtin: bool = False
+
+
 class PreferencesUpdate(BaseModel):
     default_image_provider_id: str | None = None
     default_image_model: str | None = None
     default_text_provider_id: str | None = None
     default_text_model: str | None = None
     history_summary_enabled: bool | None = None
+    style_presets: list[StylePresetInput] | None = Field(default=None, max_length=50)
     onboarding_completed: bool | None = None
 
 
