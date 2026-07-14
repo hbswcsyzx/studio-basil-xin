@@ -1,40 +1,40 @@
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color-scheme: light dark;
-  --bg: #e9edf1;
-  --canvas: #dfe5ea;
-  --surface: #fbfcfd;
-  --surface-2: #f1f4f6;
-  --surface-3: #e4eaee;
-  --text: #17212b;
-  --muted: #687683;
-  --border: #cdd6de;
-  --border-strong: #aebbc5;
-  --accent: #176b72;
-  --accent-hover: #105961;
-  --accent-soft: #dcecee;
+  --bg: #f2f3f5;
+  --canvas: #e5e7eb;
+  --surface: #ffffff;
+  --surface-2: #f7f7f8;
+  --surface-3: #eceef1;
+  --text: #181a1f;
+  --muted: #6c727c;
+  --border: #d6d9de;
+  --border-strong: #b8bdc5;
+  --accent: #315aa6;
+  --accent-hover: #274989;
+  --accent-soft: #e7ecf8;
   --accent-text: #ffffff;
-  --danger: #b94150;
-  --warning: #a86816;
-  --success: #26715c;
-  --shadow: 0 18px 52px rgba(25, 39, 50, .18);
-  --shadow-soft: 0 8px 24px rgba(25, 39, 50, .12);
+  --danger: #bd4652;
+  --warning: #a66718;
+  --success: #28765a;
+  --shadow: 0 18px 52px rgba(24, 26, 31, .18);
+  --shadow-soft: 0 8px 24px rgba(24, 26, 31, .12);
   --ease-out: cubic-bezier(.22, 1, .36, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #11171c; --canvas: #0b1014; --surface: #171f25; --surface-2: #1d272e; --surface-3: #27333c;
-    --text: #edf2f4; --muted: #9eabb5; --border: #303d47; --border-strong: #455561;
-    --accent: #62c3c4; --accent-hover: #7bd1d0; --accent-soft: #17383a; --accent-text: #071112;
-    --danger: #ed7b86; --warning: #e0ad5c; --success: #72c6a6; --shadow: 0 20px 58px rgba(0, 0, 0, .44); --shadow-soft: 0 8px 26px rgba(0, 0, 0, .28);
+    --bg: #111214; --canvas: #0b0c0e; --surface: #181a1e; --surface-2: #1f2227; --surface-3: #292d33;
+    --text: #f1f3f5; --muted: #a2a8b1; --border: #343940; --border-strong: #4a515b;
+    --accent: #7da0ef; --accent-hover: #98b5f5; --accent-soft: #202d4b; --accent-text: #0b1220;
+    --danger: #ef7b85; --warning: #dfad5b; --success: #70c39f; --shadow: 0 20px 58px rgba(0, 0, 0, .44); --shadow-soft: 0 8px 26px rgba(0, 0, 0, .28);
   }
 }
 :root[data-theme="dark"] {
-  --bg: #11171c; --canvas: #0b1014; --surface: #171f25; --surface-2: #1d272e; --surface-3: #27333c;
-  --text: #edf2f4; --muted: #9eabb5; --border: #303d47; --border-strong: #455561;
-  --accent: #62c3c4; --accent-hover: #7bd1d0; --accent-soft: #17383a; --accent-text: #071112;
-  --danger: #ed7b86; --warning: #e0ad5c; --success: #72c6a6; --shadow: 0 20px 58px rgba(0, 0, 0, .44); --shadow-soft: 0 8px 26px rgba(0, 0, 0, .28);
+  --bg: #111214; --canvas: #0b0c0e; --surface: #181a1e; --surface-2: #1f2227; --surface-3: #292d33;
+  --text: #f1f3f5; --muted: #a2a8b1; --border: #343940; --border-strong: #4a515b;
+  --accent: #7da0ef; --accent-hover: #98b5f5; --accent-soft: #202d4b; --accent-text: #0b1220;
+  --danger: #ef7b85; --warning: #dfad5b; --success: #70c39f; --shadow: 0 20px 58px rgba(0, 0, 0, .44); --shadow-soft: 0 8px 26px rgba(0, 0, 0, .28);
 }
 :root[data-theme="light"] { color-scheme: light; }
 

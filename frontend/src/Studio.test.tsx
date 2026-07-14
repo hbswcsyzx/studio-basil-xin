@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, test, vi } from 'vitest'
 import Studio from './Studio'
@@ -61,4 +61,13 @@ test('keeps quota usage in settings overview instead of the main header', async 
   await userEvent.click(screen.getByRole('button', { name: '打开设置' }))
   expect(screen.getByRole('progressbar', { name: '图片额度' })).toHaveAttribute('aria-valuenow', '2')
   expect(screen.getByRole('progressbar', { name: '会话额度' })).toHaveAttribute('aria-valuenow', '1')
+})
+
+test('opens the session drawer without waiting for favorites to load', () => {
+  vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(resolve => window.setTimeout(() => resolve(new Response('[]', { status: 200 })), 1000))))
+  render(<Studio user={user} workspaces={[workspace]} providers={providers} quota={{ used: 1, limit: 1000, conversations_used: 1, conversations_limit: 100 }} onUser={vi.fn()} onWorkspaces={vi.fn()} onProviders={vi.fn()} onQuota={vi.fn()} onLogout={vi.fn()} />)
+
+  fireEvent.click(screen.getByRole('button', { name: '打开会话' }))
+
+  expect(screen.getByRole('complementary', { name: '会话与收藏' })).toBeInTheDocument()
 })

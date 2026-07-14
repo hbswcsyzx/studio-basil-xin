@@ -118,9 +118,9 @@ export default function Studio(props: Props) {
     }
   }
 
-  async function openSessions() {
-    try { setFavoriteAssets(await api<Asset[]>('/api/assets/favorites')) } catch { setFavoriteAssets([]) }
+  function openSessions() {
     setSessionsOpen(true)
+    api<Asset[]>('/api/assets/favorites').then(setFavoriteAssets).catch(() => setFavoriteAssets([]))
   }
 
   async function selectFavorite(asset: Asset) { await loadWorkspace(asset.workspace_id, asset.id) }
