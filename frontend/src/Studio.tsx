@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Aperture, Download, Heart, History, ImagePlus, LoaderCircle, Menu, Settings, Sparkles, Star, Sun, Trash2, Upload, X } from 'lucide-react'
 import { api, ApiError } from './api'
 import OnboardingGuide from './OnboardingGuide'
@@ -61,6 +61,7 @@ export default function Studio(props: Props) {
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState('')
+  const [draggingAssetId, setDraggingAssetId] = useState('')
   const [favoriteAssets, setFavoriteAssets] = useState<Asset[]>([])
   const uploadRef = useRef<HTMLInputElement>(null)
   const promptRef = useRef<HTMLTextAreaElement>(null)
@@ -143,6 +144,26 @@ export default function Studio(props: Props) {
     setPrompt('')
     setError('')
     window.requestAnimationFrame(() => promptRef.current?.focus())
+  }
+
+  function startAssetDrag(event: DragEvent<HTMLButtonElement>, asset: Asset) {
+    event.dataTransfer.effectAllowed = 'copy'
+    event.dataTransfer.setData('application/x-studio-asset-id', asset.id)
+    setDraggingAssetId(asset.id)
+  }
+
+  function allowAssetDrop(event: DragEvent<HTMLElement>) {
+    if (!draggingAssetId) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+  }
+
+  function dropAsset(event: DragEvent<HTMLElement>) {
+    event.preventDefault()
+    const assetId = event.dataTransfer.getData('application/x-studio-asset-id')
+    setDraggingAssetId('')
+    const asset = assets.find(item => item.id === assetId)
+    if (asset) citeAsset(asset)
   }
 
   function restoreRun(run: Run, assetId = '') {
@@ -240,7 +261,7 @@ export default function Studio(props: Props) {
     </header>
 
     <main className="workspace-main">
-      <aside className="run-timeline" aria-label="历史刻度"><div className="timeline-title"><History /><span>{runs.length}</span></div><div className="timeline-scroll">{timelineRuns.map((run, runIndex) => run.assets.length ? run.assets.map(asset => <button key={asset.id} className={asset.id === selected?.id ? 'timeline-thumb active' : 'timeline-thumb'} aria-label={`查看第 ${runIndex + 1} 次生成`} onClick={() => restoreRun(run, asset.id)}><img className="contained-thumbnail" src={asset.content_url} alt="历史生成图" />{asset.favorite && <Star className="thumb-star" fill="currentColor" />}</button>) : <button key={run.id} className="timeline-failed" aria-label={`查看失败的第 ${runIndex + 1} 次生成`} onClick={() => restoreRun(run)}><X /><span>失败</span></button>)}</div></aside>
+      <aside className="run-timeline" aria-label="历史刻度"><div className="timeline-title"><History /><span>{runs.length}</span></div><div className="timeline-scroll">{timelineRuns.map((run, runIndex) => run.assets.length ? run.assets.map(asset => <div key={asset.id} className="timeline-thumb-shell"><button className={asset.id === selected?.id ? 'timeline-thumb active' : 'timeline-thumb'} aria-label={`查看第 ${runIndex + 1} 次生成`} title="拖到输入区以引用" draggable onDragStart={event => startAssetDrag(event, asset)} onDragEnd={() => setDraggingAssetId('')} onClick={() => restoreRun(run, asset.id)}><img draggable={false} className="contained-thumbnail" src={asset.content_url} alt="历史生成图" />{asset.favorite && <Star className="thumb-star" fill="currentColor" />}</button><button className="timeline-cite" aria-label={`引用第 ${runIndex + 1} 次生成继续修改`} title="引用此图继续修改" onClick={() => citeAsset(asset)}><PlusIcon /></button></div>) : <button key={run.id} className="timeline-failed" aria-label={`查看失败的第 ${runIndex + 1} 次生成`} onClick={() => restoreRun(run)}><X /><span>失败</span></button>)}</div></aside>
 
       <section className="output-stage" aria-label="图片输出">
         {selected ? <><div className="selected-image-wrap"><img key={selected.id} src={selected.content_url} alt="生成结果" className="selected-image viewport-fit-image" /></div><div className="image-actions"><button className="icon-button" aria-label="引用此图继续修改" title="引用此图继续修改" onClick={() => citeAsset(selected)}><ImagePlus /></button><button className={selected.favorite ? 'icon-button active-icon' : 'icon-button'} aria-label={selected.favorite ? '取消收藏图片' : '收藏图片'} onClick={() => favoriteAsset(selected)}><Heart fill={selected.favorite ? 'currentColor' : 'none'} /></button><a className="icon-button" href={selected.download_url} aria-label="下载图片"><Download /></a><button className="icon-button danger" aria-label="删除图片" onClick={() => deleteAsset(selected)}><Trash2 /></button></div><div className="image-meta">{selected.width} × {selected.height}</div></> : <div className="empty-output"><ImagePlus /><h2>从一个想法开始</h2><p>输入提示词，或添加参考图</p></div>}
@@ -248,7 +269,7 @@ export default function Studio(props: Props) {
       </section>
 
       <section className="generation-dock" aria-label="生成设置">
-        <div className="dock-section input-zone"><div className="dock-heading"><span>01</span><strong>输入</strong></div><textarea ref={promptRef} aria-label="描述你想生成的图片" value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="描述你想生成的图片" rows={4} /><div className="input-tools"><input ref={uploadRef} id="reference-upload" className="sr-only" type="file" accept="image/*" multiple onChange={addReferences} aria-label="上传参考图" /><button className="secondary-button" onClick={() => uploadRef.current?.click()}><Upload /> 参考图</button><label className="compact-select"><span className="sr-only">风格预设</span><select aria-label="风格预设" value={style} onChange={event => { if (event.target.value === '__manage__') { setStyle(''); openSettings('styles') } else setStyle(event.target.value) }}><option value="">无预设风格</option>{stylePresets.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}<option value="__manage__">管理 / 自定义风格…</option></select></label><button className="secondary-button" onClick={optimize} disabled={busy !== ''}>{busy === 'optimize' ? <LoaderCircle className="spin" /> : <Sparkles />} 一键润色</button></div>{references.length + referencedAssets.length > 0 && <div className="reference-grid">{referencedAssets.map(asset => <CitedAssetThumb key={asset.id} asset={asset} onRemove={() => setReferencedAssets(current => current.filter(item => item.id !== asset.id))} />)}{references.map(file => <ReferenceThumb key={`${file.name}-${file.size}-${file.lastModified}`} file={file} onRemove={() => setReferences(current => current.filter(item => item !== file))} />)}{references.length + referencedAssets.length < 4 && <button className="reference-add" aria-label="继续添加参考图" onClick={() => uploadRef.current?.click()}><PlusIcon /></button>}</div>}</div>
+        <div role="region" aria-label="图片与提示词输入区" className={draggingAssetId ? 'dock-section input-zone reference-drop-active' : 'dock-section input-zone'} onDragOver={allowAssetDrop} onDrop={dropAsset} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDraggingAssetId('') }}><div className="dock-heading"><span>01</span><strong>输入</strong></div><textarea ref={promptRef} aria-label="描述你想生成的图片" value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="描述你想生成的图片" rows={4} /><div className="input-tools"><input ref={uploadRef} id="reference-upload" className="sr-only" type="file" accept="image/*" multiple onChange={addReferences} aria-label="上传参考图" /><button className="secondary-button" onClick={() => uploadRef.current?.click()}><Upload /> 参考图</button><label className="compact-select"><span className="sr-only">风格预设</span><select aria-label="风格预设" value={style} onChange={event => { if (event.target.value === '__manage__') { setStyle(''); openSettings('styles') } else setStyle(event.target.value) }}><option value="">无预设风格</option>{stylePresets.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}<option value="__manage__">管理 / 自定义风格…</option></select></label><button className="secondary-button" onClick={optimize} disabled={busy !== ''}>{busy === 'optimize' ? <LoaderCircle className="spin" /> : <Sparkles />} 一键润色</button></div>{references.length + referencedAssets.length > 0 && <div className="reference-grid">{referencedAssets.map(asset => <CitedAssetThumb key={asset.id} asset={asset} onRemove={() => setReferencedAssets(current => current.filter(item => item.id !== asset.id))} />)}{references.map(file => <ReferenceThumb key={`${file.name}-${file.size}-${file.lastModified}`} file={file} onRemove={() => setReferences(current => current.filter(item => item !== file))} />)}{references.length + referencedAssets.length < 4 && <button className="reference-add" aria-label="继续添加参考图" onClick={() => uploadRef.current?.click()}><PlusIcon /></button>}</div>}</div>
 
         <div className="dock-section params-zone"><div className="dock-heading"><span>02</span><strong>图片设置</strong></div><div className="parameter-grid"><label>尺寸<select value={size} onChange={event => setSize(event.target.value)}><option value="1024x1024">1:1 · 1024</option><option value="1536x1024">3:2 · 横向</option><option value="1024x1536">2:3 · 纵向</option><option value="2048x1152">16:9 · 2K</option><option value="3840x2160">16:9 · 4K</option><option value="custom">自定义</option></select></label>{size === 'custom' && <div className="custom-size"><label>宽<input type="number" min="256" max="3840" step="16" value={customWidth} onChange={event => setCustomWidth(Number(event.target.value))} /></label><span>×</span><label>高<input type="number" min="256" max="3840" step="16" value={customHeight} onChange={event => setCustomHeight(Number(event.target.value))} /></label></div>}<label>质量<select value={quality} onChange={event => setQuality(event.target.value)}><option value="auto">自动</option><option value="medium">标准</option><option value="high">高</option></select></label><label>数量<select value={count} onChange={event => setCount(Number(event.target.value))}>{[1,2,3,4].map(item => <option key={item}>{item}</option>)}</select></label></div><details className="advanced-settings"><summary>更多设置</summary><div><label>背景<select value={background} onChange={event => setBackground(event.target.value)}><option value="auto">自动</option><option value="opaque">不透明</option>{imageModel !== 'gpt-image-2' && <option value="transparent">透明</option>}</select></label><label>格式<select value={outputFormat} onChange={event => setOutputFormat(event.target.value)}><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select></label>{outputFormat !== 'png' && <label>压缩<input type="number" min="0" max="100" value={compression} onChange={event => setCompression(Number(event.target.value))} /></label>}</div></details></div>
 

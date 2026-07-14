@@ -130,3 +130,38 @@ test('cites the selected generated image for a focused refinement request', asyn
   expect(String(submitted?.get('prompt'))).toContain('未明确要求修改的主体身份、构图、服装与画面风格保持不变')
   expect(String(submitted?.get('prompt'))).toContain('只把人物表情改得更严厉')
 })
+
+test('drags a timeline image into the input area as a citation instead of a URL', () => {
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json([])))
+  render(<Studio user={user} workspaces={[workspace]} providers={providers} quota={{ used: 1, limit: 1000, conversations_used: 1, conversations_limit: 100 }} onUser={vi.fn()} onWorkspaces={vi.fn()} onProviders={vi.fn()} onQuota={vi.fn()} onLogout={vi.fn()} />)
+  const timelineButton = screen.getByRole('button', { name: '查看第 1 次生成' })
+  const inputArea = screen.getByRole('region', { name: '图片与提示词输入区' })
+  const data = new Map<string, string>()
+  const dataTransfer = {
+    effectAllowed: 'none',
+    dropEffect: 'none',
+    setData: (type: string, value: string) => data.set(type, value),
+    getData: (type: string) => data.get(type) ?? '',
+  }
+
+  fireEvent.dragStart(timelineButton, { dataTransfer })
+  expect(timelineButton).toHaveAttribute('draggable', 'true')
+  expect(data.get('application/x-studio-asset-id')).toBe('a1')
+  fireEvent.dragOver(inputArea, { dataTransfer })
+  expect(inputArea).toHaveClass('reference-drop-active')
+  fireEvent.drop(inputArea, { dataTransfer })
+
+  expect(screen.getByRole('img', { name: '已引用的生成图片' })).toHaveAttribute('src', '/content')
+  expect(screen.getByRole('textbox', { name: '描述你想生成的图片' })).not.toHaveValue('/content')
+})
+
+test('cites a timeline image from its hover action', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json([])))
+  render(<Studio user={user} workspaces={[workspace]} providers={providers} quota={{ used: 1, limit: 1000, conversations_used: 1, conversations_limit: 100 }} onUser={vi.fn()} onWorkspaces={vi.fn()} onProviders={vi.fn()} onQuota={vi.fn()} onLogout={vi.fn()} />)
+
+  const citeButton = screen.getByRole('button', { name: '引用第 1 次生成继续修改' })
+  expect(citeButton).toHaveAttribute('title', '引用此图继续修改')
+  await userEvent.click(citeButton)
+
+  expect(screen.getByRole('img', { name: '已引用的生成图片' })).toHaveAttribute('src', '/content')
+})
