@@ -27,7 +27,7 @@ On mobile, the canvas remains first, the generation dock follows it, and session
 
 A single Docker container serves a React static application and a FastAPI JSON API. SQLite stores accounts, sessions, providers, runs, and image metadata. Generated images and reference uploads live in a mounted filesystem volume. The API is the only component that knows upstream API keys.
 
-Caddy terminates HTTP/HTTPS and proxies `studio.basil.xin` plus a temporary plain-HTTP IP route to the container on `127.0.0.1:8787`. The retired port 3000 is not used.
+The repository exposes one application port, `8787`, through Docker Compose. Reverse-proxy and domain configuration remain deployment-environment concerns and are not stored or managed by this repository. The retired port 3000 is not used.
 
 ## Security And Isolation
 
@@ -59,4 +59,3 @@ Upstream timeouts, invalid credentials, incompatible models, quota limits, and m
 ## Verification
 
 Backend tests cover registration, login isolation, forced admin password change, encrypted provider storage, model discovery, quota enforcement, session deletion, image persistence, and upstream error mapping. Frontend tests cover the direct generation flow, theme behavior, collapsed sessions, provider setup, download controls, and quota states. Browser verification covers desktop and mobile, both themes, no-overlap checks, and a complete mocked generate/edit workflow.
-

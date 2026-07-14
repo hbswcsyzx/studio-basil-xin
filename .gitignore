@@ -2,9 +2,13 @@
 .venv/
 node_modules/
 frontend/dist/
+frontend/test-results/
 data/
 storage/
 __pycache__/
+*.egg-info/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 .pytest_cache/
 .coverage
-

@@ -1,0 +1,17 @@
+services:
+  studio:
+    build: .
+    container_name: studio-basil
+    restart: unless-stopped
+    ports:
+      - "${STUDIO_PORT:-8787}:8787"
+    environment:
+      STUDIO_SECRET_KEY: "${STUDIO_SECRET_KEY}"
+      STUDIO_ENCRYPTION_KEY: "${STUDIO_ENCRYPTION_KEY}"
+      STUDIO_COOKIE_SECURE: "${STUDIO_COOKIE_SECURE:-false}"
+    volumes:
+      - studio_data:/data
+
+volumes:
+  studio_data:
+

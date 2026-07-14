@@ -52,7 +52,7 @@
 
 ### Task 6: Packaging and browser verification
 
-**Files:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `Caddyfile`, `frontend/playwright.config.ts`, `frontend/e2e/studio.spec.ts`
+**Files:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `frontend/playwright.config.ts`, `frontend/e2e/studio.spec.ts`
 
 - [ ] Write a Playwright test for register -> provider -> model refresh -> create session -> generate -> select -> download -> delete.
 - [ ] Build frontend and backend container; run backend and frontend suites.
@@ -62,6 +62,5 @@
 
 - [ ] Upload the project to `/opt/image-studio` without secrets.
 - [ ] Generate server-only session and encryption keys, start the Compose service on `127.0.0.1:8787`, and verify health.
-- [ ] Replace the retired Caddy port-3000 route with `studio.basil.xin` and temporary `http://209.209.49.41` routes; validate and reload Caddy.
+- [ ] Configure the server's existing Caddy installation outside the repository to proxy `studio.basil.xin` to `127.0.0.1:8787`; validate and reload Caddy.
 - [ ] Verify registration, login, provider model discovery, a live image request, image download, restart persistence, and public IP access.
-
