@@ -5,7 +5,7 @@ import threading
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from image_studio.generation import canvas_prompt, conform_image_to_size, validate_output_size
+from image_studio.generation import canvas_prompt, conform_image_to_size, generate_images, validate_output_size
 
 
 def make_png() -> bytes:
@@ -50,6 +50,60 @@ def test_gpt_image_2_custom_size_constraints_are_validated():
             pass
         else:
             raise AssertionError(f"{invalid} should be rejected")
+
+
+def test_upstream_requests_receive_selected_size_quality_and_count(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            encoded = base64.b64encode(make_png()).decode()
+            return {"data": [{"b64_json": encoded} for _ in range(3)]}
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def post(self, url, **kwargs):
+            calls.append((url, kwargs))
+            return FakeResponse()
+
+    monkeypatch.setattr("image_studio.generation.httpx.Client", FakeClient)
+    common = {
+        "base_url": "https://up.example",
+        "api_key": "key",
+        "model": "gpt-image-2",
+        "prompt": "A precise test image",
+        "size": "1024x1024",
+        "quality": "medium",
+        "count": 3,
+        "background": "auto",
+        "output_format": "png",
+        "output_compression": 100,
+    }
+
+    generated = generate_images(**common, reference_images=[])
+    edited = generate_images(**common, reference_images=[("reference.png", make_png(), "image/png")])
+
+    assert len(generated) == 3
+    assert len(edited) == 3
+    assert calls[0][0].endswith("/images/generations")
+    assert calls[0][1]["json"]["size"] == "1024x1024"
+    assert calls[0][1]["json"]["quality"] == "medium"
+    assert calls[0][1]["json"]["n"] == 3
+    assert calls[1][0].endswith("/images/edits")
+    assert calls[1][1]["data"]["size"] == "1024x1024"
+    assert calls[1][1]["data"]["quality"] == "medium"
+    assert calls[1][1]["data"]["n"] == "3"
 
 
 def setup_provider_and_workspace(client: TestClient, register):

@@ -165,3 +165,34 @@ test('cites a timeline image from its hover action', async () => {
 
   expect(screen.getByRole('img', { name: '已引用的生成图片' })).toHaveAttribute('src', '/content')
 })
+
+test('shows and submits the selected generation count separately from reference count', async () => {
+  let submitted: FormData | undefined
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const path = String(input)
+    if (path.endsWith('/generate')) {
+      submitted = init?.body as FormData
+      return Response.json({ assets: [{ ...asset, id: 'a2' }] }, { status: 201 })
+    }
+    if (path === '/api/workspaces/w1') return Response.json(workspace)
+    if (path === '/api/quota') return Response.json({ used: 2, limit: 1000, conversations_used: 1, conversations_limit: 100 })
+    return Response.json([])
+  }))
+  render(<Studio user={user} workspaces={[workspace]} providers={providers} quota={{ used: 1, limit: 1000, conversations_used: 1, conversations_limit: 100 }} onUser={vi.fn()} onWorkspaces={vi.fn()} onProviders={vi.fn()} onQuota={vi.fn()} onLogout={vi.fn()} />)
+
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: '尺寸' }), '3840x2160')
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: '质量' }), 'medium')
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: '数量' }), '3')
+  await userEvent.click(screen.getByRole('button', { name: '引用此图继续修改' }))
+
+  expect(screen.getByText('生成 3 张')).toBeInTheDocument()
+  expect(screen.getByText('1 张参考图')).toBeInTheDocument()
+
+  await userEvent.type(screen.getByRole('textbox', { name: '描述你想生成的图片' }), '只调整人物面部')
+  await userEvent.click(screen.getByRole('button', { name: '生成图片' }))
+  await waitFor(() => expect(submitted).toBeDefined())
+
+  expect(submitted?.get('size')).toBe('3840x2160')
+  expect(submitted?.get('quality')).toBe('medium')
+  expect(submitted?.get('count')).toBe('3')
+})
