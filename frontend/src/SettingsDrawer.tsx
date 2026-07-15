@@ -1,8 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { Check, CircleUserRound, Database, KeyRound, LoaderCircle, Mail, Palette, Plus, RefreshCw, RotateCcw, Save, ServerCog, Settings2, Trash2, X } from 'lucide-react'
+import { Check, CircleUserRound, Database, KeyRound, LoaderCircle, Mail, Palette, Plus, RefreshCw, Save, ServerCog, Settings2, Trash2, X } from 'lucide-react'
 import { api } from './api'
-import { defaultStylePresets, resolveStylePresets } from './stylePresets'
-import type { Provider, Quota, StylePreset, SystemSettings, User } from './types'
+import PresetManager from './PresetManager'
+import type { Provider, Quota, SystemSettings, User } from './types'
 
 type Section = 'overview' | 'models' | 'styles' | 'profile' | 'system'
 type Props = {
@@ -36,7 +36,6 @@ export default function SettingsDrawer(props: Props) {
   const [imageDefault, setImageDefault] = useState('')
   const [textDefault, setTextDefault] = useState('')
   const [historySummary, setHistorySummary] = useState(false)
-  const [styleDrafts, setStyleDrafts] = useState<StylePreset[]>(resolveStylePresets(props.user.preferences))
   const [system, setSystem] = useState<SystemSettings>(emptySystem)
   const [smtpPassword, setSmtpPassword] = useState('')
 
@@ -52,7 +51,6 @@ export default function SettingsDrawer(props: Props) {
     setImageDefault(modelValue(props.user.preferences.default_image_provider_id, props.user.preferences.default_image_model))
     setTextDefault(modelValue(props.user.preferences.default_text_provider_id, props.user.preferences.default_text_model))
     setHistorySummary(Boolean(props.user.preferences.history_summary_enabled))
-    setStyleDrafts(resolveStylePresets(props.user.preferences).map(item => ({ ...item })))
     setError(''); setSuccess('')
   }, [props.open, props.initialSection, props.user])
 
@@ -115,29 +113,6 @@ export default function SettingsDrawer(props: Props) {
     finally { setBusy('') }
   }
 
-  function updateStyle(id: string, changes: Partial<StylePreset>) {
-    setStyleDrafts(items => items.map(item => item.id === id ? { ...item, ...changes } : item))
-  }
-
-  function addStyle() {
-    setStyleDrafts(items => [...items, { id: `custom-${Date.now().toString(36)}`, name: '自定义风格', prompt: '描述这套风格需要固定遵循的视觉约束。', builtin: false }])
-  }
-
-  function resetStyle(id: string) {
-    const original = defaultStylePresets.find(item => item.id === id)
-    if (original) updateStyle(id, { prompt: original.prompt })
-  }
-
-  async function saveStyles() {
-    resetMessage(); setBusy('styles')
-    try {
-      const stylePresets = styleDrafts.map(item => ({ ...item, name: item.name.trim(), prompt: item.prompt.trim() })).filter(item => item.name && item.prompt)
-      props.onUser(await api<User>('/api/auth/preferences', { method: 'PATCH', body: JSON.stringify({ style_presets: stylePresets }) }))
-      setStyleDrafts(stylePresets); setSuccess('风格预设已保存')
-    } catch (err) { setError(err instanceof Error ? err.message : '保存风格预设失败') }
-    finally { setBusy('') }
-  }
-
   async function changePassword(event: FormEvent) {
     event.preventDefault(); setBusy('password'); resetMessage()
     try {
@@ -165,7 +140,7 @@ export default function SettingsDrawer(props: Props) {
         <nav className="settings-nav" aria-label="设置目录">
           <button className={section === 'overview' ? 'active' : ''} onClick={() => setSection('overview')}><Settings2 />概览</button>
           <button className={section === 'models' ? 'active' : ''} onClick={() => setSection('models')}><Database />添加模型</button>
-          <button className={section === 'styles' ? 'active' : ''} onClick={() => setSection('styles')}><Palette />风格预设</button>
+          <button className={section === 'styles' ? 'active' : ''} onClick={() => setSection('styles')}><Palette />预设管理</button>
           <button className={section === 'profile' ? 'active' : ''} onClick={() => setSection('profile')}><CircleUserRound />个人信息</button>
           {props.user.role === 'admin' && <button className={section === 'system' ? 'active' : ''} onClick={() => setSection('system')}><ServerCog />系统设置</button>}
         </nav>
@@ -216,17 +191,7 @@ export default function SettingsDrawer(props: Props) {
             </div>
           </section>}
 
-          {section === 'styles' && <section className="settings-view">
-            <div className="view-heading"><span className="eyebrow">提示词模板</span><h3>风格预设</h3><p>生成时会把所选模板附加到提示词末尾。所有内容仅保存在当前账户。</p></div>
-            <div className="style-preset-list">{styleDrafts.map(item => <div className="style-preset-editor" key={item.id}>
-              <div className="style-preset-title">
-                <input aria-label={`${item.name}名称`} value={item.name} disabled={item.builtin} onChange={event => updateStyle(item.id, { name: event.target.value })} />
-                {item.builtin ? <button className="icon-button" aria-label={`恢复 ${item.name} 默认值`} onClick={() => resetStyle(item.id)}><RotateCcw /></button> : <button className="icon-button danger" aria-label={`删除 ${item.name}`} onClick={() => setStyleDrafts(items => items.filter(value => value.id !== item.id))}><Trash2 /></button>}
-              </div>
-              <textarea aria-label={`${item.name}提示词`} value={item.prompt} rows={3} onChange={event => updateStyle(item.id, { prompt: event.target.value })} />
-            </div>)}</div>
-            <div className="style-preset-actions"><button className="secondary-button" aria-label="新增自定义风格" onClick={addStyle}><Plus />新增自定义风格</button><button className="primary-button" onClick={saveStyles} disabled={busy === 'styles'}>{busy === 'styles' ? <LoaderCircle className="spin" /> : <Save />}保存风格预设</button></div>
-          </section>}
+          {section === 'styles' && <PresetManager user={props.user} onUser={props.onUser} />}
 
           {section === 'profile' && <section className="settings-view">
             <div className="view-heading"><span className="eyebrow">账户</span><h3>个人信息</h3></div>

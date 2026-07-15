@@ -105,9 +105,9 @@ test('opens editable style presets from the workspace selector', async () => {
   expect(screen.getByRole('option', { name: '无预设风格' })).toBeInTheDocument()
   await userEvent.selectOptions(styleSelector, '__manage__')
 
-  expect(screen.getByRole('heading', { name: '风格预设' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '预设管理' })).toBeInTheDocument()
   expect(screen.getByRole('textbox', { name: '电影感提示词' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: '新增自定义风格' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '新增风格' })).toBeInTheDocument()
 })
 
 test('cites the selected generated image for a focused refinement request', async () => {
