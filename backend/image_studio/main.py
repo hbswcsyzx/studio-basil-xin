@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import assets, auth, generation, providers, system_settings, workspaces
+from . import assets, auth, generation, preset_derivation, providers, system_settings, workspaces
 from .assets import AssetService
 from .auth import get_current_user
 from .db import Database
@@ -36,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(workspaces.router)
     app.include_router(assets.router)
     app.include_router(generation.router)
+    app.include_router(preset_derivation.router)
     app.include_router(system_settings.router)
 
     @app.get("/api/health")
