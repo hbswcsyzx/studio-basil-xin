@@ -27,22 +27,22 @@ const sizes = ['1024x1024', '1536x1024', '1024x1536', '2048x1152', '3840x2160']
 const maxReferenceImages = 10
 type LibraryReference = { id: string; content_url: string; mime_type: string; width: number; height: number; reused?: boolean }
 
-function ReferenceThumb({ file, onRemove }: { file: File; onRemove: () => void }) {
+function ReferenceThumb({ file, index, onRemove }: { file: File; index: number; onRemove: () => void }) {
   const [src, setSrc] = useState('')
   useEffect(() => {
     if (!URL.createObjectURL) return
     const value = URL.createObjectURL(file); setSrc(value)
     return () => URL.revokeObjectURL(value)
   }, [file])
-  return <div className="reference-thumb">{src ? <img className="contained-thumbnail" src={src} alt={file.name} /> : <ImagePlus />}<button aria-label={`移除 ${file.name}`} onClick={onRemove}><X /></button></div>
+  return <div className="reference-thumb">{src ? <img className="contained-thumbnail" src={src} alt={file.name} /> : <ImagePlus />}<span className="reference-index" aria-label={`参考图 ${index}`}>{index}</span><button aria-label={`移除 ${file.name}`} onClick={onRemove}><X /></button></div>
 }
 
-function CitedAssetThumb({ asset, onRemove }: { asset: Asset; onRemove: () => void }) {
-  return <div className="reference-thumb cited-reference"><img className="contained-thumbnail" src={asset.content_url} alt="已引用的生成图片" /><button aria-label="移除引用图片" onClick={onRemove}><X /></button></div>
+function CitedAssetThumb({ asset, index, onRemove }: { asset: Asset; index: number; onRemove: () => void }) {
+  return <div className="reference-thumb cited-reference"><img className="contained-thumbnail" src={asset.content_url} alt="已引用的生成图片" /><span className="reference-index" aria-label={`参考图 ${index}`}>{index}</span><button aria-label="移除引用图片" onClick={onRemove}><X /></button></div>
 }
 
-function LibraryReferenceThumb({ asset, onRemove }: { asset: LibraryReference; onRemove: () => void }) {
-  return <div className="reference-thumb"><img className="contained-thumbnail" src={asset.content_url} alt="已选参考图" /><button aria-label="移除参考图" onClick={onRemove}><X /></button></div>
+function LibraryReferenceThumb({ asset, index, onRemove }: { asset: LibraryReference; index: number; onRemove: () => void }) {
+  return <div className="reference-thumb"><img className="contained-thumbnail" src={asset.content_url} alt="已选参考图" /><span className="reference-index" aria-label={`参考图 ${index}`}>{index}</span><button aria-label="移除参考图" onClick={onRemove}><X /></button></div>
 }
 
 export default function Studio(props: Props) {
@@ -439,9 +439,9 @@ export default function Studio(props: Props) {
             <input ref={uploadRef} id="reference-upload" className="sr-only" type="file" accept="image/*" multiple onChange={addReferences} aria-label="上传参考图" />
             <div className="reference-rail-actions"><button className="icon-button" aria-label="添加参考图" title="添加参考图" onClick={() => uploadRef.current?.click()}><Upload /></button><button className="icon-button" aria-label="打开参考图库" title="参考图库" onClick={openReferenceLibrary}><ImagePlus /></button></div>
             <div className="reference-grid">
-              {referencedAssets.map(asset => <CitedAssetThumb key={asset.id} asset={asset} onRemove={() => setReferencedAssets(current => current.filter(item => item.id !== asset.id))} />)}
-              {libraryReferences.map(asset => <LibraryReferenceThumb key={asset.id} asset={asset} onRemove={() => setLibraryReferences(current => current.filter(item => item.id !== asset.id))} />)}
-              {references.map(file => <ReferenceThumb key={`${file.name}-${file.size}-${file.lastModified}`} file={file} onRemove={() => setReferences(current => current.filter(item => item !== file))} />)}
+              {referencedAssets.map((asset, index) => <CitedAssetThumb key={asset.id} asset={asset} index={index + 1} onRemove={() => setReferencedAssets(current => current.filter(item => item.id !== asset.id))} />)}
+              {libraryReferences.map((asset, index) => <LibraryReferenceThumb key={asset.id} asset={asset} index={referencedAssets.length + index + 1} onRemove={() => setLibraryReferences(current => current.filter(item => item.id !== asset.id))} />)}
+              {references.map((file, index) => <ReferenceThumb key={`${file.name}-${file.size}-${file.lastModified}`} file={file} index={referencedAssets.length + libraryReferences.length + index + 1} onRemove={() => setReferences(current => current.filter(item => item !== file))} />)}
               {totalReferences < maxReferenceImages && <button className="reference-add" aria-label="继续添加参考图" onClick={() => uploadRef.current?.click()}><PlusIcon /></button>}
             </div>
           </div>

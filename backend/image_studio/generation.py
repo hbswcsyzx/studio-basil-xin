@@ -115,6 +115,25 @@ def conform_image_to_size(
         return output.getvalue(), normalized_mime, original_size
 
 
+def _reference_extension(mime_type: str) -> str:
+    return {
+        "image/jpeg": ".jpg",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+    }.get(mime_type.lower(), ".png")
+
+
+def reference_order_prompt(prompt: str, count: int) -> str:
+    if count <= 0:
+        return prompt
+    return (
+        f"{prompt}\n\n"
+        f"参考图按附件顺序编号为参考图 1 至参考图 {count}。"
+        "用户提到‘参考图 N’时，必须对应第 N 个附件；不要交换或重新排序。"
+        "主体在画面中的位置以用户文字要求为准，不能仅根据参考图编号推断。"
+    )
+
+
 def generate_images(
     *, base_url: str, api_key: str, model: str, prompt: str, size: str,
     quality: str, count: int, background: str, output_format: str,
@@ -122,11 +141,17 @@ def generate_images(
 ) -> list[dict]:
     headers = {"Authorization": f"Bearer {api_key}"}
     timeout = httpx.Timeout(480.0, connect=30.0)
-    upstream_prompt = canvas_prompt(prompt, size)
+    upstream_prompt = canvas_prompt(reference_order_prompt(prompt, len(reference_images)), size)
     try:
         with httpx.Client(timeout=timeout, trust_env=False) as client:
             if reference_images:
-                files = [("image[]", (name, content, mime)) for name, content, mime in reference_images]
+                files = [
+                    (
+                        "image[]",
+                        (f"reference-{index:02d}{_reference_extension(mime)}", content, mime),
+                    )
+                    for index, (_name, content, mime) in enumerate(reference_images, start=1)
+                ]
                 data = {
                     "model": model, "prompt": upstream_prompt, "size": size, "quality": quality,
                     "n": str(count), "background": background, "output_format": output_format,

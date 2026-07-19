@@ -16,7 +16,7 @@
 - Modify: `backend/tests/test_generation.py`
 - Modify: `backend/image_studio/generation.py`
 
-- [ ] **Step 1: Write the failing upstream request test**
+- [x] **Step 1: Write the failing upstream request test**
 
 Extend `test_upstream_requests_receive_selected_size_quality_and_count` to pass two ordered references and assert both the filenames and prompt contract:
 
@@ -36,7 +36,7 @@ assert "第 N 个附件" in calls[1][1]["data"]["prompt"]
 assert "位置以用户文字要求为准" in calls[1][1]["data"]["prompt"]
 ```
 
-- [ ] **Step 2: Run the backend test and verify RED**
+- [x] **Step 2: Run the backend test and verify RED**
 
 Run:
 
@@ -46,7 +46,7 @@ python -m pytest backend/tests/test_generation.py::test_upstream_requests_receiv
 
 Expected: FAIL because the current filenames retain their original names and the prompt lacks the numbering contract.
 
-- [ ] **Step 3: Add minimal numbering helpers**
+- [x] **Step 3: Add minimal numbering helpers**
 
 Add these focused helpers above `generate_images`:
 
@@ -87,7 +87,7 @@ files = [
 ]
 ```
 
-- [ ] **Step 4: Run the focused backend test and verify GREEN**
+- [x] **Step 4: Run the focused backend test and verify GREEN**
 
 Run:
 
@@ -97,7 +97,7 @@ python -m pytest backend/tests/test_generation.py::test_upstream_requests_receiv
 
 Expected: `1 passed`.
 
-- [ ] **Step 5: Run backend generation regression tests**
+- [x] **Step 5: Run backend generation regression tests**
 
 Run:
 
@@ -114,7 +114,7 @@ Expected: all tests pass.
 - Modify: `frontend/src/Studio.tsx`
 - Modify: `frontend/src/styles.css`
 
-- [ ] **Step 1: Write the failing UI/request-order test**
+- [x] **Step 1: Write the failing UI/request-order test**
 
 Add a test that selects a generated asset, a library asset, and an uploaded file. It must assert:
 
@@ -133,7 +133,7 @@ expect(orderedReferences).toEqual([
 ])
 ```
 
-- [ ] **Step 2: Run the focused frontend test and verify RED**
+- [x] **Step 2: Run the focused frontend test and verify RED**
 
 Run:
 
@@ -143,7 +143,7 @@ pnpm exec vitest run Studio.test.tsx --maxWorkers=1 --testTimeout=20000
 
 Expected: FAIL because no numbered badge exists.
 
-- [ ] **Step 3: Pass indexes through thumbnail components**
+- [x] **Step 3: Pass indexes through thumbnail components**
 
 Update all three thumbnail components to accept an `index: number` prop and render:
 
@@ -165,7 +165,7 @@ Pass continuous offsets from the existing render order:
 ))}
 ```
 
-- [ ] **Step 4: Style the badge without covering controls**
+- [x] **Step 4: Style the badge without covering controls**
 
 Add a compact top-left badge while keeping the remove control at top-right:
 
@@ -190,7 +190,7 @@ Add a compact top-left badge while keeping the remove control at top-right:
 }
 ```
 
-- [ ] **Step 5: Run the focused frontend test and verify GREEN**
+- [x] **Step 5: Run the focused frontend test and verify GREEN**
 
 Run:
 

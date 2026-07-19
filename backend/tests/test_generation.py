@@ -106,6 +106,56 @@ def test_upstream_requests_receive_selected_size_quality_and_count(monkeypatch):
     assert calls[1][1]["data"]["n"] == "3"
 
 
+def test_upstream_reference_attachments_are_numbered_in_order(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            encoded = base64.b64encode(make_png()).decode()
+            return {"data": [{"b64_json": encoded}]}
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def post(self, url, **kwargs):
+            calls.append((url, kwargs))
+            return FakeResponse()
+
+    monkeypatch.setattr("image_studio.generation.httpx.Client", FakeClient)
+    generate_images(
+        base_url="https://up.example",
+        api_key="key",
+        model="gpt-image-2",
+        prompt="Combine the people from reference image 1 and reference image 2",
+        size="1024x1024",
+        quality="high",
+        count=1,
+        background="auto",
+        output_format="png",
+        output_compression=100,
+        reference_images=[
+            ("person-a.png", make_png(), "image/png"),
+            ("person-b.png", make_png(), "image/png"),
+        ],
+    )
+
+    request = calls[0][1]
+    assert [item[1][0] for item in request["files"]] == ["reference-01.png", "reference-02.png"]
+    assert "参考图 1 至参考图 2" in request["data"]["prompt"]
+    assert "第 N 个附件" in request["data"]["prompt"]
+    assert "位置以用户文字要求为准" in request["data"]["prompt"]
+
+
 def setup_provider_and_workspace(client: TestClient, register):
     register()
     provider = client.post(

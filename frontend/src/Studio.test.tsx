@@ -224,6 +224,42 @@ test('cites the selected generated image for a focused refinement request', asyn
   expect(String(submitted?.get('prompt'))).toContain('只把人物表情改得更严厉')
 })
 
+test('numbers mixed references in the same order sent for generation', async () => {
+  let submitted: FormData | undefined
+  const libraryAsset = { id: 'library-1', content_url: '/library-1', mime_type: 'image/png', width: 800, height: 800 }
+  vi.stubGlobal('URL', { ...URL, createObjectURL: vi.fn(() => 'blob:upload'), revokeObjectURL: vi.fn() })
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const path = String(input)
+    if (path === '/api/reference-assets' && init?.method === 'POST') return Response.json([])
+    if (path === '/api/reference-assets') return Response.json([libraryAsset])
+    if (path.endsWith('/generate')) {
+      submitted = init?.body as FormData
+      return Response.json({ id: 'r2', prompt: 'combine', model: 'gpt-image-2', params: {}, status: 'running', assets: [] }, { status: 202 })
+    }
+    return Response.json([])
+  }))
+  render(<Studio user={user} workspaces={[workspace]} providers={providers} quota={{ used: 1, limit: 1000, conversations_used: 1, conversations_limit: 100 }} onUser={vi.fn()} onWorkspaces={vi.fn()} onProviders={vi.fn()} onQuota={vi.fn()} onLogout={vi.fn()} />)
+
+  await userEvent.click(screen.getByRole('button', { name: '引用此图继续修改' }))
+  await userEvent.click(screen.getByRole('button', { name: '打开参考图库' }))
+  const libraryImage = await screen.findByRole('img', { name: '参考图库图片' })
+  await userEvent.click(libraryImage.closest('button')!)
+  await userEvent.upload(screen.getByLabelText('上传参考图'), new File(['image'], 'upload.png', { type: 'image/png' }))
+
+  expect(screen.getByLabelText('参考图 1')).toHaveTextContent('1')
+  expect(screen.getByLabelText('参考图 2')).toHaveTextContent('2')
+  expect(screen.getByLabelText('参考图 3')).toHaveTextContent('3')
+
+  await userEvent.type(screen.getByRole('textbox', { name: '描述你想生成的图片' }), '按参考图编号组合人物')
+  await userEvent.click(screen.getByRole('button', { name: '生成图片' }))
+  await waitFor(() => expect(submitted).toBeDefined())
+
+  const orderedReferences = Array.from(submitted!.entries())
+    .filter(([key]) => ['reference_asset_ids', 'library_reference_ids', 'references'].includes(key))
+    .map(([key]) => key)
+  expect(orderedReferences).toEqual(['reference_asset_ids', 'library_reference_ids', 'references'])
+})
+
 test('drags a timeline image into the input area as a citation instead of a URL', () => {
   vi.stubGlobal('fetch', vi.fn(async () => Response.json([])))
   render(<Studio user={user} workspaces={[workspace]} providers={providers} quota={{ used: 1, limit: 1000, conversations_used: 1, conversations_limit: 100 }} onUser={vi.fn()} onWorkspaces={vi.fn()} onProviders={vi.fn()} onQuota={vi.fn()} onLogout={vi.fn()} />)
